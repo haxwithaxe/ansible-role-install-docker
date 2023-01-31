@@ -58,10 +58,10 @@
     state: latest
 
 - name: Install Docker-Compose
-  get_url:
-    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ansible_system  }}-{{ ansible_machine }}"
-    dest: "/usr/local/bin/docker-compose"
-    mode: 0755
+  pip:
+    name:
+      - docker-compose
+    state: latest
 
 # docker-compose no longer has bash completion in their repo. This is the
 #   newest version available as of docker-compose v2.12.2.
