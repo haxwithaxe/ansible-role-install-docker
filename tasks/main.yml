@@ -1,0 +1,72 @@
+---
+
+- name: Remove existing docker
+  apt:
+    pkg:
+      - docker
+      - docker-engine
+      - docker.io
+      - containerd
+      - runc
+    state: absent
+
+- name: Install prereqs
+  apt:
+    pkg:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+    state: latest
+
+- name: Ensure keyring directory is present
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+
+- name: Install docker apt key (Debian)
+  shell: 
+    cmd: 'curl -fsSL https://download.docker.com/linux/debian/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg'
+    creates: /etc/apt/keyrings/docker.gpg
+  when: ansible_distribution == 'Debian'
+
+- name: Install docker apt key (Ubuntu)
+  shell: 
+    cmd: 'curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg'
+    creates: /etc/apt/keyrings/docker.gpg
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Install sources.list (Debian)
+  shell:
+    cmd: 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+    creates: /etc/apt/sources.list.d/docker.list
+  when: ansible_distribution == 'Debian'
+
+- name: Install sources.list (Ubuntu)
+  shell:
+    cmd: 'echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+    creates: /etc/apt/sources.list.d/docker.list
+  when: ansible_distribution == 'Ubuntu'
+
+- name: Install Docker
+  apt:
+    pkg:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: latest
+
+- name: Install Docker-Compose
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ docker_compose_version }}/docker-compose-{{ansible_system  }}-{{ ansible_machine }}"
+    dest: "/usr/local/bin/docker-compose"
+    mode: 0755
+
+# docker-compose no longer has bash completion in their repo. This is the
+#   newest version available as of docker-compose v2.12.2.
+- name: Install Docker-Compose completion
+  get_url:
+    url: "https://raw.githubusercontent.com/docker/compose/1.29.2/contrib/completion/bash/docker-compose"
+    dest: "/etc/bash_completion.d/docker-compose"
+    mode: 0755
